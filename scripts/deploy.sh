@@ -14,7 +14,9 @@ NC='\033[0m' # No Color
 
 # 配置变量
 APP_NAME="warpbean-backend"
-APP_DIR="/Users/sarsny/AIworkspace/cursor/cobean-ios-2/iosapp/warpbean-backend"
+# 动态获取脚本所在目录的上级目录作为应用目录
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+APP_DIR="$(dirname "$SCRIPT_DIR")"
 NODE_ENV=${NODE_ENV:-production}
 PORT=${PORT:-3000}
 PM2_APP_NAME="warpbean-backend"
@@ -58,6 +60,11 @@ check_environment() {
     NPM_VERSION=$(npm --version)
     log_info "npm 版本: $NPM_VERSION"
     
+    # 检查 Git
+    check_command "git"
+    GIT_VERSION=$(git --version)
+    log_info "Git 版本: $GIT_VERSION"
+    
     # 检查 PM2 (可选)
     if command -v pm2 &> /dev/null; then
         PM2_VERSION=$(pm2 --version)
@@ -84,6 +91,40 @@ backup_current() {
         cp -r "$APP_DIR" "$BACKUP_DIR"
         log_success "备份完成: $BACKUP_DIR"
     fi
+}
+
+# 拉取最新代码
+pull_latest_code() {
+    log_info "拉取最新代码..."
+    cd "$APP_DIR"
+    
+    # 检查是否是Git仓库
+    if [ ! -d ".git" ]; then
+        log_warning "当前目录不是Git仓库，跳过代码拉取"
+        return 0
+    fi
+    
+    # 检查是否有未提交的更改
+    if ! git diff-index --quiet HEAD --; then
+        log_warning "检测到未提交的更改，将暂存当前更改"
+        git stash push -m "Auto stash before deployment $(date)"
+    fi
+    
+    # 获取当前分支
+    CURRENT_BRANCH=$(git branch --show-current)
+    log_info "当前分支: $CURRENT_BRANCH"
+    
+    # 拉取最新代码
+    if git pull origin "$CURRENT_BRANCH"; then
+        log_success "代码拉取完成"
+    else
+        log_error "代码拉取失败"
+        exit 1
+    fi
+    
+    # 显示最新提交信息
+    LATEST_COMMIT=$(git log -1 --pretty=format:"%h - %s (%an, %ar)")
+    log_info "最新提交: $LATEST_COMMIT"
 }
 
 # 安装依赖
@@ -226,7 +267,9 @@ show_help() {
     echo "  --clean          清理 node_modules 后重新安装"
     echo "  --skip-tests     跳过测试"
     echo "  --skip-migration 跳过数据库迁移"
+    echo "  --skip-git       跳过Git代码拉取"
     echo "  --backup         部署前备份当前版本"
+    echo "  --check-env      仅检查环境配置"
     echo "  --help           显示此帮助信息"
     echo ""
     echo "环境变量:"
@@ -240,7 +283,9 @@ main() {
     local CLEAN_INSTALL=false
     local SKIP_TESTS=false
     local SKIP_MIGRATION=false
+    local SKIP_GIT=false
     local DO_BACKUP=false
+    local CHECK_ENV_ONLY=false
     
     # 解析命令行参数
     while [[ $# -gt 0 ]]; do
@@ -257,8 +302,16 @@ main() {
                 SKIP_MIGRATION=true
                 shift
                 ;;
+            --skip-git)
+                SKIP_GIT=true
+                shift
+                ;;
             --backup)
                 DO_BACKUP=true
+                shift
+                ;;
+            --check-env)
+                CHECK_ENV_ONLY=true
                 shift
                 ;;
             --help)
@@ -273,6 +326,15 @@ main() {
         esac
     done
     
+    # 如果只是检查环境配置
+    if [ "$CHECK_ENV_ONLY" = true ]; then
+        log_info "检查环境配置..."
+        check_environment
+        check_env_file
+        log_success "环境配置检查完成！"
+        exit 0
+    fi
+    
     log_info "开始部署 $APP_NAME..."
     log_info "环境: $NODE_ENV"
     log_info "端口: $PORT"
@@ -282,6 +344,10 @@ main() {
     
     if [ "$DO_BACKUP" = true ]; then
         backup_current
+    fi
+    
+    if [ "$SKIP_GIT" = false ]; then
+        pull_latest_code
     fi
     
     check_env_file
