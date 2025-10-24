@@ -158,6 +158,12 @@ check_app_http() {
 
 # 检查数据库连接
 check_database() {
+    # 如禁用数据库，则直接跳过检查并返回成功
+    if [ "$DB_DISABLED" = "true" ] || [ "$DB_DISABLED" = "1" ]; then
+        log_info "数据库已禁用，跳过数据库检查"
+        return 0
+    fi
+
     log_info "检查数据库连接..."
     
     export PGPASSWORD="$DB_PASSWORD"

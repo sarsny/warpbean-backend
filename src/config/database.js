@@ -14,11 +14,18 @@ const dbConfig = {
   reconnect: true
 };
 
-// Create connection pool
-const pool = mysql.createPool(dbConfig);
+// Allow disabling database via environment variable
+const DB_DISABLED = process.env.DB_DISABLED === '1' || process.env.DB_DISABLED === 'true';
+
+// Create connection pool (disabled when DB_DISABLED is set)
+const pool = DB_DISABLED ? null : mysql.createPool(dbConfig);
 
 // Test database connection
 const testConnection = async () => {
+  if (DB_DISABLED) {
+    console.log('ℹ️ Database disabled, skipping connection test');
+    return true;
+  }
   try {
     const connection = await pool.getConnection();
     console.log('✅ Database connected successfully');
@@ -32,6 +39,9 @@ const testConnection = async () => {
 
 // Execute query with error handling
 const executeQuery = async (query, params = []) => {
+  if (DB_DISABLED) {
+    throw new Error('Database disabled');
+  }
   try {
     const [results] = await pool.execute(query, params);
     return results;
@@ -43,6 +53,9 @@ const executeQuery = async (query, params = []) => {
 
 // Get a single connection for transactions
 const getConnection = async () => {
+  if (DB_DISABLED) {
+    throw new Error('Database disabled');
+  }
   return await pool.getConnection();
 };
 

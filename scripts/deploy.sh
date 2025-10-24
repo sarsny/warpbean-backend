@@ -75,11 +75,15 @@ check_environment() {
         USE_PM2=false
     fi
     
-    # 检查 MySQL (可选)
-    if command -v mysql &> /dev/null; then
-        log_info "MySQL 已安装"
+    # 检查数据库（可选/可禁用）
+    if [ "$DB_DISABLED" = "true" ] || [ "$DB_DISABLED" = "1" ]; then
+        log_info "数据库已禁用，跳过 MySQL 检查"
     else
-        log_warning "MySQL 未检测到，请确保数据库服务正常运行"
+        if command -v mysql &> /dev/null; then
+            log_info "MySQL 已安装"
+        else
+            log_warning "MySQL 未检测到，请确保数据库服务正常运行"
+        fi
     fi
 }
 
@@ -159,10 +163,18 @@ check_env_file() {
     
     # 检查关键环境变量
     source "$APP_DIR/.env"
-    
-    if [ -z "$DB_HOST" ] || [ -z "$DB_NAME" ] || [ -z "$JWT_SECRET" ]; then
-        log_error "关键环境变量未配置，请检查 .env 文件"
-        exit 1
+
+    # 如果禁用数据库，只检查 JWT_SECRET；否则检查数据库相关配置
+    if [ "$DB_DISABLED" = "true" ] || [ "$DB_DISABLED" = "1" ]; then
+        if [ -z "$JWT_SECRET" ]; then
+            log_error "JWT_SECRET 未配置，请检查 .env 文件"
+            exit 1
+        fi
+    else
+        if [ -z "$DB_HOST" ] || [ -z "$DB_NAME" ] || [ -z "$JWT_SECRET" ]; then
+            log_error "关键环境变量未配置，请检查 .env 文件 (需要 DB_HOST, DB_NAME, JWT_SECRET)"
+            exit 1
+        fi
     fi
     
     log_success "环境配置检查通过"
@@ -170,6 +182,12 @@ check_env_file() {
 
 # 数据库迁移
 run_migration() {
+    # 跳过迁移（禁用数据库）
+    if [ "$DB_DISABLED" = "true" ] || [ "$DB_DISABLED" = "1" ]; then
+        log_info "数据库已禁用，跳过数据库迁移"
+        return 0
+    fi
+
     log_info "执行数据库迁移..."
     cd "$APP_DIR"
     
@@ -268,6 +286,7 @@ show_help() {
     echo "  --skip-tests     跳过测试"
     echo "  --skip-migration 跳过数据库迁移"
     echo "  --skip-git       跳过Git代码拉取"
+    echo "  --no-db          不使用数据库：跳过数据库检查和迁移"
     echo "  --backup         部署前备份当前版本"
     echo "  --check-env      仅检查环境配置"
     echo "  --help           显示此帮助信息"
@@ -275,6 +294,7 @@ show_help() {
     echo "环境变量:"
     echo "  NODE_ENV         运行环境 (development/production)"
     echo "  PORT             服务端口 (默认: 3000)"
+    echo "  DB_DISABLED      设置为 1 或 true 时禁用数据库相关步骤"
     echo ""
 }
 
@@ -304,6 +324,11 @@ main() {
                 ;;
             --skip-git)
                 SKIP_GIT=true
+                shift
+                ;;
+            --no-db)
+                DB_DISABLED=true
+                SKIP_MIGRATION=true
                 shift
                 ;;
             --backup)
