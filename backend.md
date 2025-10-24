@@ -375,6 +375,15 @@ warpbean-backend/
 │   ├── utils/
 │   │   └── validation.js        # 验证工具
 │   └── app.js                   # 主应用文件
+├── scripts/                     # 运维脚本目录
+│   ├── deploy.sh                # 部署脚本
+│   ├── monitor.sh               # 监控脚本
+│   ├── logs.sh                  # 日志管理脚本
+│   ├── backup.sh                # 数据库备份脚本
+│   ├── health-check.sh          # 健康检查脚本
+│   └── env-manager.sh           # 环境管理脚本
+├── environments/                # 环境配置目录 (由env-manager.sh创建)
+├── backups/                     # 备份文件目录 (由脚本自动创建)
 ├── .env                         # 环境变量
 ├── package.json                 # 项目依赖
 └── server.js                    # 服务器启动文件
@@ -479,6 +488,269 @@ node test_personality_api.js
 - 服务健康状态检查
 - API响应格式验证
 
+## Operations & Maintenance Scripts
+
+WarpBean Backend 提供了一套完整的运维脚本，用于简化部署、监控、日志管理等运维任务。所有脚本位于 `scripts/` 目录下。
+
+### 部署脚本 (deploy.sh)
+
+自动化部署脚本，支持开发和生产环境部署。
+
+**使用方法:**
+```bash
+# 开发环境部署
+./scripts/deploy.sh
+
+# 生产环境部署
+./scripts/deploy.sh production
+
+# 使用PM2部署
+./scripts/deploy.sh production pm2
+
+# 仅安装依赖
+./scripts/deploy.sh --deps-only
+
+# 仅运行迁移
+./scripts/deploy.sh --migrate-only
+```
+
+**功能特性:**
+- 环境检查和依赖安装
+- 数据库迁移执行
+- 支持Node.js直接启动和PM2进程管理
+- 详细的部署日志记录
+- 错误处理和回滚机制
+
+### 监控脚本 (monitor.sh)
+
+系统和应用监控脚本，提供实时监控和告警功能。
+
+**使用方法:**
+```bash
+# 快速状态检查
+./scripts/monitor.sh status
+
+# 完整系统检查
+./scripts/monitor.sh check
+
+# 实时监控模式
+./scripts/monitor.sh monitor
+
+# 生成监控报告
+./scripts/monitor.sh report
+
+# 配置告警
+./scripts/monitor.sh alert --email your@email.com --webhook https://your-webhook-url
+```
+
+**监控项目:**
+- 服务状态和健康检查
+- CPU、内存、磁盘使用率
+- 应用进程监控
+- 数据库连接状态
+- 日志错误检测
+- API响应时间监控
+
+### 日志管理脚本 (logs.sh)
+
+日志查看、分析和管理工具。
+
+**使用方法:**
+```bash
+# 查看最新日志
+./scripts/logs.sh view
+
+# 查看错误日志
+./scripts/logs.sh error
+
+# 搜索日志内容
+./scripts/logs.sh search "关键词"
+
+# 清理旧日志
+./scripts/logs.sh clean --days 30
+
+# 日志轮转
+./scripts/logs.sh rotate
+
+# 导出日志
+./scripts/logs.sh export --format json --output logs_export.json
+
+# 实时监控日志
+./scripts/logs.sh tail
+
+# 生成日志报告
+./scripts/logs.sh report --html
+```
+
+**功能特性:**
+- 多种日志查看模式
+- 智能日志搜索和过滤
+- 自动日志清理和轮转
+- 日志导出和报告生成
+- 实时日志监控
+
+### 数据库备份脚本 (backup.sh)
+
+数据库备份和恢复管理工具。
+
+**使用方法:**
+```bash
+# 完整备份
+./scripts/backup.sh backup
+
+# 仅备份结构
+./scripts/backup.sh backup --schema-only
+
+# 仅备份数据
+./scripts/backup.sh backup --data-only
+
+# 自定义备份
+./scripts/backup.sh backup --tables "users,anxiety_topics"
+
+# 恢复备份
+./scripts/backup.sh restore backup_20231023_143022.sql
+
+# 列出备份文件
+./scripts/backup.sh list
+
+# 验证备份
+./scripts/backup.sh verify backup_20231023_143022.sql
+
+# 清理旧备份
+./scripts/backup.sh clean --days 30
+
+# 自动备份
+./scripts/backup.sh auto
+
+# 显示统计信息
+./scripts/backup.sh stats
+```
+
+**功能特性:**
+- 多种备份模式支持
+- 自动备份调度
+- 备份文件验证
+- 压缩和加密选项
+- 备份统计和管理
+
+### 健康检查脚本 (health-check.sh)
+
+应用和系统健康状态检查工具。
+
+**使用方法:**
+```bash
+# 快速健康检查
+./scripts/health-check.sh
+
+# 完整健康检查
+./scripts/health-check.sh --full
+
+# 监控模式
+./scripts/health-check.sh --monitor
+
+# 性能测试
+./scripts/health-check.sh --performance
+
+# 生成健康报告
+./scripts/health-check.sh --report
+
+# 设置检查间隔
+./scripts/health-check.sh --monitor --interval 30
+```
+
+**检查项目:**
+- 应用服务状态
+- 数据库连接
+- API端点响应
+- 系统资源使用
+- 磁盘空间检查
+- 网络连接测试
+
+### 环境管理脚本 (env-manager.sh)
+
+多环境配置管理工具，支持开发、测试、生产环境切换。
+
+**使用方法:**
+```bash
+# 列出所有环境
+./scripts/env-manager.sh list
+
+# 显示当前环境
+./scripts/env-manager.sh current
+
+# 切换环境
+./scripts/env-manager.sh switch production
+
+# 创建新环境
+./scripts/env-manager.sh create staging
+
+# 复制环境配置
+./scripts/env-manager.sh copy development staging
+
+# 删除环境
+./scripts/env-manager.sh delete old-env
+
+# 备份环境配置
+./scripts/env-manager.sh backup production
+
+# 恢复环境配置
+./scripts/env-manager.sh restore production_20231023_143022.env
+
+# 验证环境配置
+./scripts/env-manager.sh validate
+
+# 比较环境配置
+./scripts/env-manager.sh diff development production
+
+# 导出环境配置
+./scripts/env-manager.sh export production
+
+# 导入环境配置
+./scripts/env-manager.sh import production_export.env
+
+# 创建配置模板
+./scripts/env-manager.sh template
+```
+
+**功能特性:**
+- 多环境配置管理
+- 环境快速切换
+- 配置文件备份和恢复
+- 环境配置验证
+- 配置差异比较
+- 配置导入导出
+
+### 脚本配置
+
+所有脚本都支持通过环境变量进行配置：
+
+```bash
+# 监控脚本配置
+export MONITOR_CPU_THRESHOLD=80
+export MONITOR_MEMORY_THRESHOLD=85
+export MONITOR_DISK_THRESHOLD=90
+export MONITOR_EMAIL=admin@example.com
+export MONITOR_WEBHOOK_URL=https://hooks.slack.com/your-webhook
+
+# 备份脚本配置
+export BACKUP_RETENTION_DAYS=30
+export BACKUP_COMPRESS=true
+export BACKUP_ENCRYPT=false
+
+# 日志脚本配置
+export LOG_RETENTION_DAYS=30
+export LOG_MAX_SIZE=100M
+```
+
+### 使用建议
+
+1. **定期备份**: 建议每日自动备份数据库
+2. **监控告警**: 配置邮件或Webhook告警，及时发现问题
+3. **日志管理**: 定期清理日志文件，避免磁盘空间不足
+4. **环境隔离**: 使用环境管理脚本严格区分开发、测试、生产环境
+5. **健康检查**: 在生产环境中定期运行健康检查
+
+
 ## AI Integration
 
 ### DeepSeek服务配置
@@ -547,6 +819,18 @@ WarpBean支持三种不同的AI人格，每种人格都有独特的语气和回�
 - `total_tokens`: 总token数
 
 ## Changelog
+
+### 2025-10-24
+- **新增**: 完整的运维脚本套件，包含6个核心脚本
+- **新增**: `scripts/deploy.sh` - 自动化部署脚本，支持开发和生产环境
+- **新增**: `scripts/monitor.sh` - 系统监控脚本，提供实时监控和告警功能
+- **新增**: `scripts/logs.sh` - 日志管理脚本，支持查看、搜索、清理和轮转
+- **新增**: `scripts/backup.sh` - 数据库备份脚本，支持多种备份模式和自动化
+- **新增**: `scripts/health-check.sh` - 健康检查脚本，全面检测应用和系统状态
+- **新增**: `scripts/env-manager.sh` - 环境管理脚本，支持多环境配置切换
+- **功能**: 所有脚本支持详细的命令行参数和配置选项
+- **文档**: 完善运维脚本使用文档，包含详细的使用方法和配置说明
+- **结构**: 更新项目结构，添加scripts、environments、backups目录
 
 ### 2025-10-23
 - **新增**: 公开建议生成接口 `POST /api/suggestion-test/public/generate`
