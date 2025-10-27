@@ -145,9 +145,12 @@ CREATE TABLE chat_messages (
 {
   "title": "我想减肥",
   "description": "最近体重增加了很多，感到很焦虑",
+  "title_context": "例如：最近加班多、外卖吃得多，主要困扰是内疚和焦虑感，想要更适合当下的一句建议", // 可选：用于补充标题语义，不入库；仅作为 DeepSeek 上下文
   "severity_level": "medium",
   "personality": "green"  // 可选: "green", "yellow", "red"
 }
+
+// 说明：description 会入库，同时也会作为 DeepSeek 生成上下文（对 title 的具体描述）；title_context 仅用于上下文，不入库；当同时提供时，优先使用 title_context
 
 // Response
 {
@@ -183,8 +186,11 @@ CREATE TABLE chat_messages (
 // Request
 {
   "title": "我想减肥",
+  "title_context": "例如：遇到节食反弹，容易焦虑，希望更温柔的安抚语气", // 可选
   "personality": "yellow"  // 可选: "green", "yellow", "red"
 }
+
+// 说明：可传入 description 作为对 title 的具体描述，同样会作为 DeepSeek 上下文使用；若同时提供 title_context 与 description，则优先使用 title_context
 
 // Response
 {
@@ -212,6 +218,7 @@ CREATE TABLE chat_messages (
 // Request
 {
   "title": "工作压力大",
+  "title_context": "例如：这周被会议填满，脑子很乱，希望给一个更贴近当前情绪的回应", // 可选
   "personality": "yellow",  // 可选: "green", "yellow", "red"
   "history": [  // 可选: 历史建议记录数组
     {
@@ -224,6 +231,8 @@ CREATE TABLE chat_messages (
     }
   ]
 }
+
+// 说明：支持传入 description 作为上下文；title_context 与 description 任选其一即可；若同时提供则优先使用 title_context
 
 // Response
 {
@@ -769,7 +778,7 @@ WarpBean支持三种不同的AI人格，每种人格都有独特的语气和回�
 1. 长期主义 → "不需要现在搞定""时间够"
 2. 不比较 → "别和别人比"
 3. 实质反馈 → "能想起就值得被肯定"
-4. 明确需求 → "关注现在最重要的小事"
+4. 明确需求 → "关注现在最重要的那一件事"
 5. 立即行动（绿泡版）→ "允许不做，先歇一会儿"
 6. 课题分离 → "放下不在你掌控的事"
 
@@ -800,7 +809,7 @@ WarpBean支持三种不同的AI人格，每种人格都有独特的语气和回�
 
 **方法论支持:**
 1. 课题分离 → "只管你能控制的部分"
-2. 明确需求 → "想清楚现在最重要的一件事"
+2. 明确需求 → "想清楚现在最重要的那一件事"
 3. 立即行动 → "先动一点，再慢慢理"
 4. 长期主义（稳态）→ "事情需要时间，不要催自己"
 5. 实质反馈 → "能觉察焦虑本身就是进步"

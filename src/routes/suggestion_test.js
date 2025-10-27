@@ -15,6 +15,16 @@ const validateSuggestionRequest = [
     .optional()
     .isIn(['green', 'yellow', 'red'])
     .withMessage('Personality must be one of: green, yellow, red'),
+  body('title_context')
+    .optional()
+    .isLength({ max: 500 })
+    .withMessage('title_context must not exceed 500 characters')
+    .trim(),
+  body('description')
+    .optional()
+    .isLength({ max: 1000 })
+    .withMessage('Description must not exceed 1000 characters')
+    .trim(),
   body('history')
     .optional()
     .isArray()
@@ -45,13 +55,13 @@ const handleValidationErrors = (req, res, next) => {
 
 // Generate anxiety suggestions (no auth, no database)
 router.post('/generate', validateSuggestionRequest, handleValidationErrors, asyncHandler(async (req, res) => {
-  const { title, personality = 'green' } = req.body;
+  const { title, personality = 'green', title_context, description } = req.body;
 
   try {
     console.log(`🎯 生成建议请求: "${title}" (${personality}人格)`);
     
     // Generate suggestions using DeepSeek with personality support (no historical context for simplicity)
-    const aiResponse = await deepseekService.generateAnxietySuggestions(title, [], personality);
+    const aiResponse = await deepseekService.generateAnxietySuggestions(title, [], personality, title_context || description);
 
     if (!aiResponse.success || !aiResponse.suggestions) {
       throw new Error('Failed to generate suggestions');
@@ -89,13 +99,13 @@ router.post('/generate', validateSuggestionRequest, handleValidationErrors, asyn
 
 // Public suggestion generation endpoint (no authentication required)
 router.post('/public/generate', validateSuggestionRequest, handleValidationErrors, asyncHandler(async (req, res) => {
-  const { title, personality = 'green', history = [] } = req.body;
+  const { title, personality = 'green', history = [], title_context, description } = req.body;
 
   try {
     console.log(`🌐 公开API建议生成请求: "${title}" (${personality}人格)${history.length > 0 ? ` 带${history.length}条历史记录` : ''}`);
     
     // Generate suggestions using DeepSeek with personality support and history context
-    const aiResponse = await deepseekService.generateAnxietySuggestions(title, history, personality);
+    const aiResponse = await deepseekService.generateAnxietySuggestions(title, history, personality, title_context || description);
 
     if (!aiResponse.success || !aiResponse.suggestions) {
       throw new Error('Failed to generate suggestions');

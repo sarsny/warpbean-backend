@@ -18,6 +18,11 @@ const validateSuggestionRequest = [
     .isLength({ max: 1000 })
     .withMessage('Description must not exceed 1000 characters')
     .trim(),
+  body('title_context')
+    .optional()
+    .isLength({ max: 500 })
+    .withMessage('title_context must not exceed 500 characters')
+    .trim(),
   body('severity_level')
     .optional()
     .isIn(['low', 'medium', 'high', 'critical'])
@@ -54,7 +59,7 @@ const handleValidationErrors = (req, res, next) => {
 
 // Generate anxiety suggestions
 router.post('/', validateSuggestionRequest, handleValidationErrors, asyncHandler(async (req, res) => {
-  const { title, description, severity_level = 'medium', personality = 'green' } = req.body;
+  const { title, description, title_context, severity_level = 'medium', personality = 'green' } = req.body;
   const userId = req.user.id;
 
   try {
@@ -76,7 +81,8 @@ router.post('/', validateSuggestionRequest, handleValidationErrors, asyncHandler
         suggestion_text: s.suggestion_text,
         suggestion_type: s.suggestion_type
       })),
-      personality
+      personality,
+      title_context || description
     );
 
     if (!aiResponse.success || !aiResponse.suggestions) {
