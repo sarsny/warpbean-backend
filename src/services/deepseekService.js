@@ -32,16 +32,16 @@ class DeepSeekService {
           break;
       }
 
-      let userPrompt = `焦虑主题：${title}`;
+      let userPrompt = `正在拖延的事情：${title}`;
       if (titleContext && String(titleContext).trim().length > 0) {
-        userPrompt += `\n主题补充描述：${String(titleContext).trim()}`;
+        userPrompt += `\n拖延事件的补充描述：${String(titleContext).trim()}`;
       }
       
       if (historyContext.length > 0) {
         userPrompt += `\n\n历史建议记录：\n${historyContext.map((item, index) => 
           `${index + 1}. ${item.suggestion_text} (类型: ${item.suggestion_type})`
         ).join('\n')}`;
-        userPrompt += '\n\n请基于历史记录提供新的、不重复的建议。';
+        userPrompt += '\n\n请基于历史记录提供新的、差异化较大的建议。';
       }
 
       const response = await this.client.post('/chat/completions', {
