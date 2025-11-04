@@ -64,7 +64,7 @@ class DeepSeekService {
             content: userPrompt
           }
         ],
-        temperature: 1.0,
+        temperature: 0.8,
         max_tokens: 1500,
         response_format: { type: 'json_object' }
       });
